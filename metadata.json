@@ -1,0 +1,5 @@
+{
+  "name": "Smart-Cut",
+  "description": "A high-performance browser-based tool to split long videos into 15, 30, or 60-second segments for social media, featuring ZIP exports and individual downloads.",
+  "requestFramePermissions": []
+}
