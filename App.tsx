@@ -28,7 +28,6 @@ const App: React.FC = () => {
   };
 
   const handleReset = () => {
-    // Limpar URLs antigas para evitar memory leak
     segments.forEach(seg => URL.revokeObjectURL(seg.url));
     setFile(null);
     setSegments([]);
@@ -48,9 +47,9 @@ const App: React.FC = () => {
       });
       setSegments(result);
       setProcessing({ isProcessing: false, progress: 100, message: 'Concluído!' });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Ocorreu um erro ao recortar o vídeo. O navegador pode ter interrompido o processo.');
+      setError(err.message || 'Ocorreu um erro ao recortar o vídeo. Verifique se o formato é suportado pelo seu navegador.');
       setProcessing({ isProcessing: false, progress: 0, message: '' });
     }
   };
@@ -68,7 +67,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cortes_video_${duration}s.zip`;
+    link.download = `smart-cut_${duration}s.zip`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -78,11 +77,11 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
+            <div className="bg-indigo-600 p-2 rounded-lg shadow-indigo-200 shadow-lg">
               <Scissors className="text-white" size={20} />
             </div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-              QuickCut
+              Smart-Cut
             </h1>
           </div>
           {file && !processing.isProcessing && (
@@ -102,10 +101,10 @@ const App: React.FC = () => {
           <div className="space-y-6 text-center">
             <div className="max-w-xl mx-auto">
               <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
-                Corte vídeos longos em segundos.
+                Corte vídeos longos com inteligência.
               </h2>
               <p className="mt-4 text-lg text-slate-600">
-                Ideal para Instagram, WhatsApp e TikTok. Processe tudo direto no seu navegador com total privacidade.
+                A ferramenta definitiva para Criadores de Conteúdo. Divida seus vídeos para Stories, Reels e TikTok em segundos.
               </p>
             </div>
             <FileUploader onFileSelect={handleFileSelect} />
@@ -115,22 +114,22 @@ const App: React.FC = () => {
                 <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
                   <FileVideo className="text-indigo-600" size={20} />
                 </div>
-                <h3 className="font-semibold mb-2">Processamento Local</h3>
-                <p className="text-sm text-slate-500">Seu vídeo não sai do seu computador. Segurança e privacidade total.</p>
+                <h3 className="font-semibold mb-2">Sem Servidores</h3>
+                <p className="text-sm text-slate-500">Privacidade garantida. O processamento ocorre 100% no seu computador.</p>
               </div>
               <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <Scissors className="text-purple-600" size={20} />
                 </div>
-                <h3 className="font-semibold mb-2">Cortes Reais</h3>
-                <p className="text-sm text-slate-500">Recodificamos os segmentos para garantir que funcionem em qualquer rede social.</p>
+                <h3 className="font-semibold mb-2">Recorte Preciso</h3>
+                <p className="text-sm text-slate-500">Divida com perfeição em intervalos de 15, 30 ou 60 segundos.</p>
               </div>
               <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <Archive className="text-blue-600" size={20} />
                 </div>
-                <h3 className="font-semibold mb-2">Exportação em Massa</h3>
-                <p className="text-sm text-slate-500">Baixe todos os cortes de uma vez só em um arquivo ZIP organizado.</p>
+                <h3 className="font-semibold mb-2">Download em ZIP</h3>
+                <p className="text-sm text-slate-500">Gere todas as partes e baixe um único arquivo organizado.</p>
               </div>
             </div>
           </div>
@@ -141,9 +140,9 @@ const App: React.FC = () => {
                 <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
                   <FileVideo className="text-indigo-600" size={24} />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 truncate max-w-md">{file.name}</h3>
-                  <p className="text-sm text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB • Pronto para processar</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-slate-900 truncate">{file.name}</h3>
+                  <p className="text-sm text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB • Smart-Cut está pronto</p>
                 </div>
               </div>
 
@@ -154,8 +153,8 @@ const App: React.FC = () => {
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm">
                     <Clock size={18} className="mt-0.5 shrink-0" />
                     <p>
-                      <strong>Nota:</strong> O recorte no navegador é feito através de gravação em tempo real. 
-                      O tempo de processamento será proporcional à duração total do vídeo.
+                      <strong>Como funciona:</strong> O Smart-Cut grava cada segmento individualmente para garantir a compatibilidade. 
+                      O tempo total dependerá do tamanho do seu vídeo original.
                     </p>
                   </div>
 
@@ -165,7 +164,7 @@ const App: React.FC = () => {
                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-100 active:scale-[0.98]"
                   >
                     <Scissors size={20} />
-                    Iniciar Recorte Automático
+                    Processar com Smart-Cut
                   </button>
                 </div>
               ) : (
@@ -180,7 +179,7 @@ const App: React.FC = () => {
                       className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
                     >
                       <IconArchive />
-                      Baixar Todos (.ZIP)
+                      Baixar ZIP Completo
                     </button>
                   </div>
                   
@@ -212,7 +211,7 @@ const App: React.FC = () => {
 
       <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-slate-200 py-4 hidden sm:block">
         <div className="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400">
-          Processamento via MediaRecorder API • 100% Client-side • QuickCut v1.1
+          Tecnologia Smart-Cut • MediaRecorder Native API • v1.2
         </div>
       </footer>
     </div>

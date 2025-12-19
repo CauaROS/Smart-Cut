@@ -2,8 +2,8 @@
 import { VideoSegment, SplitDuration } from '../types';
 
 /**
- * Motor de processamento de vídeo usando MediaRecorder API.
- * Corta o vídeo gravando os segmentos em tempo real.
+ * Smart-Cut Video Processor
+ * Uses MediaRecorder to capture video segments.
  */
 export const processVideo = async (
   file: File,
@@ -11,10 +11,18 @@ export const processVideo = async (
   onProgress: (progress: number, message: string) => void
 ): Promise<VideoSegment[]> => {
   return new Promise((resolve, reject) => {
+    // Create a hidden video element and append it to the body
+    // Some browsers require the video to be in the DOM for captureStream to work reliably
     const video = document.createElement('video');
-    video.preload = 'auto';
+    video.style.position = 'fixed';
+    video.style.top = '-10000px';
+    video.style.left = '-10000px';
+    video.style.width = '640px'; // Set a size for consistency
+    video.style.height = '360px';
     video.muted = true;
     video.playsInline = true;
+    document.body.appendChild(video);
+
     const videoUrl = URL.createObjectURL(file);
     video.src = videoUrl;
 
@@ -23,11 +31,25 @@ export const processVideo = async (
       const totalSegments = Math.ceil(duration / segmentDuration);
       const segments: VideoSegment[] = [];
 
-      // Prepara o stream do vídeo
-      // @ts-ignore - captureStream é suportado na maioria dos browsers modernos
-      const stream = video.captureStream ? video.captureStream() : (video as any).mozCaptureStream();
+      // Check for stream capture support
+      let stream: MediaStream;
+      try {
+        // @ts-ignore
+        if (video.captureStream) {
+          // @ts-ignore
+          stream = video.captureStream();
+        } else if ((video as any).mozCaptureStream) {
+          stream = (video as any).mozCaptureStream();
+        } else {
+          throw new Error('Seu navegador não suporta a captura de fluxo de vídeo.');
+        }
+      } catch (e) {
+        document.body.removeChild(video);
+        reject(new Error('Falha ao capturar fluxo do vídeo: ' + (e as Error).message));
+        return;
+      }
       
-      onProgress(5, 'Preparando motor de recorte...');
+      onProgress(5, 'Smart-Cut preparando motor...');
 
       for (let i = 0; i < totalSegments; i++) {
         const startTime = i * segmentDuration;
@@ -36,10 +58,10 @@ export const processVideo = async (
 
         onProgress(
           5 + (i / totalSegments) * 90, 
-          `Gravando parte ${currentSegmentNum} de ${totalSegments}...`
+          `Processando parte ${currentSegmentNum} de ${totalSegments}...`
         );
 
-        // Posiciona o vídeo no início do segmento
+        // Seek to start of segment
         video.currentTime = startTime;
         await new Promise(r => {
           const onSeeked = () => {
@@ -49,13 +71,28 @@ export const processVideo = async (
           video.addEventListener('seeked', onSeeked);
         });
 
-        // Configura o gravador para este segmento
         const chunks: Blob[] = [];
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') 
-          ? 'video/webm;codecs=vp9,opus' 
-          : 'video/webm';
-          
-        const recorder = new MediaRecorder(stream, { mimeType });
+        
+        // Find supported mime type
+        const possibleMimeTypes = [
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm',
+          'video/mp4' // Some browsers might support mp4 recording (unlikely)
+        ];
+        
+        const mimeType = possibleMimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+        
+        if (!mimeType) {
+          document.body.removeChild(video);
+          reject(new Error('Nenhum formato de gravação suportado encontrado neste navegador.'));
+          return;
+        }
+
+        const recorder = new MediaRecorder(stream, { 
+          mimeType,
+          videoBitsPerSecond: 2500000 // 2.5 Mbps for decent quality
+        });
 
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) chunks.push(e.data);
@@ -67,17 +104,18 @@ export const processVideo = async (
           };
         });
 
-        // Inicia gravação e reprodução
+        // Start recording
         recorder.start();
         video.play();
 
-        // Aguarda atingir o tempo final do segmento
+        // Wait until end of segment or file
         await new Promise(r => {
           const checkTime = () => {
-            if (video.currentTime >= endTime || video.paused) {
+            if (video.currentTime >= endTime || video.paused || video.ended) {
               video.pause();
               r(null);
             } else {
+              // Check every frame
               requestAnimationFrame(checkTime);
             }
           };
@@ -86,7 +124,10 @@ export const processVideo = async (
 
         recorder.stop();
         const segmentBlob = await segmentPromise;
-        const segmentName = `${file.name.split('.')[0]}_parte_${currentSegmentNum}.webm`;
+        
+        // Determine extension based on mimeType
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const segmentName = `${file.name.split('.')[0]}_parte_${currentSegmentNum}.${ext}`;
 
         segments.push({
           id: crypto.randomUUID(),
@@ -98,13 +139,18 @@ export const processVideo = async (
         });
       }
 
-      onProgress(100, 'Processamento concluído com sucesso!');
+      onProgress(100, 'Smart-Cut finalizado!');
+      
+      // Cleanup
+      document.body.removeChild(video);
       URL.revokeObjectURL(videoUrl);
+      
       resolve(segments);
     };
 
     video.onerror = () => {
-      reject(new Error('Erro ao carregar o arquivo de vídeo.'));
+      if (document.body.contains(video)) document.body.removeChild(video);
+      reject(new Error('Erro ao carregar o arquivo de vídeo. Verifique se o formato é válido.'));
     };
   });
 };
