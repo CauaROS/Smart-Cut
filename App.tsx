@@ -1,12 +1,12 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { Download, Scissors, FileVideo, CheckCircle, AlertCircle, RefreshCw, Archive, Clock } from 'lucide-react';
-import { VideoSegment, SplitDuration, ProcessingState } from './types';
-import FileUploader from './components/FileUploader';
-import DurationSelector from './components/DurationSelector';
-import SegmentPreview from './components/SegmentPreview';
-import ProcessingOverlay from './components/ProcessingOverlay';
-import { processVideo } from './services/videoProcessor';
+import { VideoSegment, SplitDuration, ProcessingState } from './types.ts';
+import FileUploader from './components/FileUploader.tsx';
+import DurationSelector from './components/DurationSelector.tsx';
+import SegmentPreview from './components/SegmentPreview.tsx';
+import ProcessingOverlay from './components/ProcessingOverlay.tsx';
+import { processVideo } from './services/videoProcessor.ts';
 
 const IconArchive = () => <Archive size={20} />;
 
@@ -98,7 +98,7 @@ const App: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4 mt-8">
         {!file ? (
-          <div className="space-y-6 text-center">
+          <div className="space-y-6 text-center animate-in fade-in duration-700">
             <div className="max-w-xl mx-auto">
               <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
                 Corte vídeos longos com inteligência.
@@ -211,7 +211,7 @@ const App: React.FC = () => {
 
       <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-slate-200 py-4 hidden sm:block">
         <div className="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400">
-          Tecnologia Smart-Cut • MediaRecorder Native API • v1.2
+          Tecnologia Smart-Cut • MediaRecorder Native API • v1.3
         </div>
       </footer>
     </div>
